@@ -1,0 +1,1 @@
+This repo contains a ROS device driver for the BOSCH IndraDrive CS, an EtherNet/IP-based industrial motor controller.

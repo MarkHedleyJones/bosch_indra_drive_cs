@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>bosch_indra_driver</name>
+  <version>0.1.1</version>
+  <description>Interface driver for Rexroth IndraDrive Cs Motor Controller via Ethernet/IP (Industrial Protocol)</description>
+
+  <license>BSD</license>
+  <maintainer email="markjones112358@gmail.com">Mark Jones</maintainer>
+  <author email="markjones112358@gmail.com">Mark Jones</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>boost</depend>
+  <depend>odva_ethernetip</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+
+  <test_depend>rosunit</test_depend>
+  <test_depend>roslaunch</test_depend>
+</package>
