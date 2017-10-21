@@ -191,7 +191,6 @@ int main(int argc, char *argv[])
   while (ros::ok())
   {
     loop_counter++;
-    if (loop_counter % 1000 == 0) cout << loop_counter << endl;
     try
     {
       // Give drive a few syncs first to establish current state
