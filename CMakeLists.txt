@@ -1,13 +1,22 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(bosch_indra_driver)
 
-find_package(catkin REQUIRED COMPONENTS odva_ethernetip roscpp sensor_msgs)
+find_package(catkin REQUIRED COMPONENTS odva_ethernetip roscpp sensor_msgs message_generation)
 
 find_package(Boost 1.47 REQUIRED COMPONENTS system)
 
+add_message_files(
+  DIRECTORY msg
+  FILES
+  IndraControl.msg
+  IndraStatus.msg
+)
+
+generate_messages(DEPENDENCIES std_msgs)
+
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS odva_ethernetip roscpp sensor_msgs
+  CATKIN_DEPENDS odva_ethernetip roscpp sensor_msgs message_runtime
   LIBRARIES bosch_indra
   DEPENDS Boost
 )
