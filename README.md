@@ -1,5 +1,5 @@
 This repository contains a ROS device driver for the BOSCH IndraDrive CS, an industrial motor controller made by Bosch Rexroth.
-This package uses the odva_ethernet library (available [here](https://github.com/ros-drivers/odva_ethernetip)) to communicate with the controller over EtherNet/IP.
+This package uses the odva_ethernetip library (available [here](https://github.com/ros-drivers/odva_ethernetip)) to communicate with the controller over EtherNet/IP.
 
 # Configuring the drive
 The following configuration was saved to the controller. This package assumes you are also using these settings. You may need to adjust relevant values in this package if your drive configuration is different.
