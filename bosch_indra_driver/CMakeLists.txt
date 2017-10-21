@@ -23,13 +23,6 @@ target_link_libraries(bosch_indra
   ${catkin_LIBRARIES}
 )
 
-## Declare a cpp executable
-add_executable(scanner_node src/scanner_node.cpp)
-target_link_libraries(scanner_node
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
 add_executable(bosch_indra_node src/indra_node.cpp)
 target_link_libraries(bosch_indra_node
   bosch_indra
@@ -38,7 +31,7 @@ target_link_libraries(bosch_indra_node
 )
 
 ## Mark executables and libraries for installation
-install(TARGETS bosch_indra bosch_indra_node scanner_node
+install(TARGETS bosch_indra bosch_indra_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
