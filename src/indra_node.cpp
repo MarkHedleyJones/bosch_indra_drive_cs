@@ -35,6 +35,8 @@ either expressed or implied, of the FreeBSD Project.
 #include "odva_ethernetip/socket/tcp_socket.h"
 #include "odva_ethernetip/socket/udp_socket.h"
 #include "bosch_indra_driver/indra.h"
+#include "bosch_indra_driver/IndraControl.h"
+#include "bosch_indra_driver/IndraStatus.h"
 
 #define BOOT 0
 #define RUNNING 1
@@ -46,6 +48,10 @@ using boost::shared_ptr;
 using eip::socket::TCPSocket;
 using eip::socket::UDPSocket;
 using namespace bosch_indra_driver;
+
+int32_t command_velocity;
+int32_t command_position;
+bool    command_update_flag;
 
 
 void print_change(string message, uint8_t &print_flag, string marker)
@@ -146,6 +152,19 @@ bool initialise_drive(INDRA &indra)
   return false;
 }
 
+
+void command_callback(const bosch_indra_driver::IndraControl& msg)
+{
+  command_position = msg.position_command;
+  command_velocity = msg.velocity_command;
+  command_update_flag = true;
+}
+
+void publish_status(INDRA &indra, ros::Publisher pub)
+{
+
+}
+
 int main(int argc, char *argv[])
 {
   uint32_t loop_counter = 0;
@@ -154,8 +173,15 @@ int main(int argc, char *argv[])
   uint8_t state_change_flag = true;
   int8_t direction = 1;
 
+  command_position = 0;
+  command_velocity = 0;
+  command_update_flag = false;
+
   ros::init(argc, argv, "indra");
   ros::NodeHandle nh;
+
+  ros::Publisher pub = nh.advertise<bosch_indra_driver::IndraStatus>("indra_status", 1);
+  ros::Subscriber sub = nh.subscribe("indra_command", 1, command_callback);
 
   // get config from params
   string host;
@@ -188,6 +214,8 @@ int main(int argc, char *argv[])
     return -1;
   }
 
+  bosch_indra_driver::IndraStatus msg;
+
   while (ros::ok())
   {
     loop_counter++;
@@ -204,10 +232,15 @@ int main(int argc, char *argv[])
 
           case RUNNING:
             print_state_change("Entered RUNNING State", state_change_flag);
-            if (indra.ready_for_command()) {
-              if (direction == 1) direction = -1;
-              else direction = 1;
-              indra.goto_position(direction * 10000000, 10000000);
+            // Test sequence
+            // if (indra.ready_for_command()) {
+            //   if (direction == 1) direction = -1;
+            //   else direction = 1;
+            //   indra.goto_position(direction * 10000000, 10000000);
+            // }
+            if (command_update_flag && indra.ready_for_command()) {
+              indra.goto_position(command_position, command_velocity);
+              command_update_flag = false;
             }
             break;
 
@@ -225,6 +258,20 @@ int main(int argc, char *argv[])
 
       // Synchronise messages with the controller
       indra.sync();
+
+      if (state == RUNNING && indra.ready_for_command())
+        {
+          msg.ready_for_command = 1;
+        }
+      else
+        {
+          msg.ready_for_command = 0;
+        }
+      if (state == ERROR) msg.error = 1;
+      else msg.error = 0;
+      msg.position_feedback = indra.position;
+      msg.velocity_feedback = indra.velocity;
+      pub.publish(msg);
 
       // Detect error in the drive and automatically change state
       if (state == RUNNING && \

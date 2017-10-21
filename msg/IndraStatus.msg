@@ -1,4 +1,3 @@
-Header header
 bool   ready_for_command
 bool   error
 int32  position_feedback
