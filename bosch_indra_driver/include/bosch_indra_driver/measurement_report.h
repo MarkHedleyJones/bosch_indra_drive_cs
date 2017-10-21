@@ -48,9 +48,8 @@ using eip::serialization::Writer;
 namespace bosch_indra_driver {
 
 /**
- * Data structure and operators for INDRA specific Measurement Report data
- * as defined in the INDRA-DM Ethernet/IP Addendum. Used for both range and
- * reflectance data.
+ * Data structure and operators for IndraDrive CS specific data as defined in
+ * the IndraDrive configuration tool.
  */
 class MeasurementReport : public Serializable
 {

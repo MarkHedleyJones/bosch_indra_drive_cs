@@ -56,6 +56,7 @@ using eip::SequencedAddressItem;
 using eip::SequencedDataItem;
 
 
+// Used to print binary data
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte)  \
   (byte & 0x80 ? '1' : '0'), \
@@ -67,19 +68,14 @@ using eip::SequencedDataItem;
   (byte & 0x02 ? '1' : '0'), \
   (byte & 0x01 ? '1' : '0')
 
-
 namespace bosch_indra_driver {
 
 
 void INDRA::sendMeasurmentReportConfigUDP()
 {
-  // Detect changes to the control word and toggle the command change flag.
-  // if (prv_ctrl_wrd.word != ctrl_wrd.word) toggleCommandBit();
-
   // TODO from upstream author: check that connection is valid
   CPFPacket pkt;
-  shared_ptr<SequencedAddressItem> address =
-    make_shared<SequencedAddressItem>(
+  shared_ptr<SequencedAddressItem> address = make_shared<SequencedAddressItem>(
       getConnection(connection_num_).o_to_t_connection_id, mrc_sequence_num_++);
   shared_ptr<MeasurementReportConfig> data = make_shared<MeasurementReportConfig>();
   *data = mrc_;
@@ -93,12 +89,14 @@ void INDRA::sendMeasurmentReportConfigUDP()
   prv_ctrl_wrd.word = ctrl_wrd.word;
 }
 
+
 void INDRA::print_control_field(uint8_t index)
 {
   cout << "CONTROL: ";
   cout << ctrl_wrd.get_desc_by_value(ctrl_wrd.desc_[index], ctrl_wrd.get_by_offset(index));
   cout << endl;
 }
+
 
 void INDRA::print_status_field(uint8_t index)
 {
@@ -107,15 +105,18 @@ void INDRA::print_status_field(uint8_t index)
   cout << endl;
 }
 
+
 void INDRA::print_control_word()
 {
   for (uint8_t i=0; i < 12; i++) print_control_field(i);
 }
 
+
 void INDRA::print_status_word()
 {
   for (uint8_t i=0; i < 13; i++) print_status_field(i);
 }
+
 
 void INDRA::print_control_word_changes()
 {
@@ -128,6 +129,7 @@ void INDRA::print_control_word_changes()
   }
 }
 
+
 void INDRA::print_status_word_changes()
 {
   for (uint8_t i=0; i < 13; i++)
@@ -139,6 +141,7 @@ void INDRA::print_status_word_changes()
   }
 }
 
+
 void INDRA::toggle_command_bits()
 {
   if (ctrl_wrd.get(IPOSYNC) == 0)
@@ -147,6 +150,7 @@ void INDRA::toggle_command_bits()
   }
   else ctrl_wrd.set(IPOSYNC, 0);
 }
+
 
 uint8_t INDRA::set_control_field(CONTROL_FIELD field, uint16_t value, bool respect_lock)
 {
@@ -184,6 +188,7 @@ uint8_t INDRA::set_control_field(CONTROL_FIELD field, uint16_t value, bool respe
   }
 }
 
+
 uint8_t INDRA::goto_position(int32_t position, int32_t velocity)
 {
   first_control_command_ = false;
@@ -204,11 +209,13 @@ uint8_t INDRA::goto_position(int32_t position, int32_t velocity)
   }
 }
 
+
 uint8_t INDRA::set_relative_positioning()
 {
   ctrl_wrd.set(ABSOLUTE_RELATIVE, 1);
   return true;
 }
+
 
 uint8_t INDRA::ready_for_command()
 {
@@ -270,11 +277,13 @@ uint8_t INDRA::ready_for_command()
   }
 }
 
+
 uint8_t INDRA::set_absolute_positioning()
 {
   ctrl_wrd.set(ABSOLUTE_RELATIVE, 0);
   return true;
 }
+
 
 uint8_t INDRA::halt_off()
 {
@@ -286,6 +295,7 @@ uint8_t INDRA::halt_off()
   else return 1;
 }
 
+
 uint8_t INDRA::halt_on()
 {
   if (ctrl_wrd.get(DRIVE_HALT) != 0)
@@ -295,6 +305,7 @@ uint8_t INDRA::halt_on()
   }
   else return 1;
 }
+
 
 uint8_t INDRA::drive_on()
 {
@@ -333,6 +344,7 @@ uint8_t INDRA::drive_on()
   }
 }
 
+
 uint8_t INDRA::drive_off()
 {
   switch (stat_wrd.get(READY_FOR_OPERATION))
@@ -360,6 +372,7 @@ uint8_t INDRA::drive_off()
   }
 }
 
+
 uint8_t INDRA::home_drive()
 {
   if (ctrl_wrd.get(GOING_TO_ZERO) == 0)
@@ -374,15 +387,18 @@ uint8_t INDRA::home_drive()
   else return 0;
 }
 
+
 uint8_t INDRA::in_operating_mode()
 {
   return (stat_wrd.get(OPERATING_MODE_ACKNOWLEDGMENT) == 2);
 }
 
+
 uint8_t INDRA::in_parameter_mode()
 {
   return (stat_wrd.get(OPERATING_MODE_ACKNOWLEDGMENT) == 0);
 }
+
 
 uint8_t INDRA::has_error()
 {
@@ -406,6 +422,7 @@ uint8_t INDRA::has_error()
   }
 }
 
+
 uint8_t INDRA::clear_error()
 {
   static bool echo = true;
@@ -425,6 +442,7 @@ uint8_t INDRA::clear_error()
     return 1;
   }
 }
+
 
 uint8_t INDRA::enter_operating_mode()
 {
@@ -460,6 +478,7 @@ uint8_t INDRA::enter_operating_mode()
   }
 }
 
+
 uint8_t INDRA::enter_parameter_mode()
 {
   if (ctrl_wrd.get(OPERATING_MODE_SETTING) != 0)
@@ -494,10 +513,12 @@ uint8_t INDRA::enter_parameter_mode()
   }
 }
 
+
 bool INDRA::previous_config_change_acknowledged()
 {
   return ready_for_cfg_cmd_;
 }
+
 
 bool INDRA::pervious_control_command_acknowledged()
 {
@@ -537,6 +558,7 @@ void INDRA::toggleCommandBit()
   }
 }
 
+
 MeasurementReport INDRA::receiveMeasurementReportUDP()
 {
   CPFPacket pkt = receiveIOPacket();
@@ -557,7 +579,7 @@ MeasurementReport INDRA::receiveMeasurementReportUDP()
   return data;
 }
 
-// Sets the control word bits to the current state of the status words
+
 void INDRA::align_words()
 {
   switch (stat_wrd.get(OPERATING_MODE_ACKNOWLEDGMENT))
@@ -576,8 +598,15 @@ void INDRA::align_words()
   }
 }
 
+
 void INDRA::establishConnection()
 {
+  // /// Assembly ID for this endpoint of the connection
+  // EIP_USINT assembly_id;  - uint8_t
+  // /// Buffer size to be used for routing
+  // EIP_UINT buffer_size; - uint16_t
+  // /// Request packet interval
+  // EIP_UDINT rpi; - uint32_t
   EIP_CONNECTION_INFO_T o_to_t, t_to_o;
   // Originator to Target (PC to Drive)
   o_to_t.assembly_id = 101;     // Default set by Indra config tool

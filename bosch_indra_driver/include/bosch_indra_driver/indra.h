@@ -280,9 +280,9 @@ public:
 };
 
 /**
- * Main interface for the INDRA Laser Scanner. Produces methods to access the
- * laser scanner from a high level, including setting parameters and getting
- * single scans.
+ * Main interface for the BOSCH IndraDrive CS Servo Controller.
+ * Provides methods to access the controller from a high level, including
+ * setting states, commanding positions, and reading values.
  */
 class INDRA : public Session
 {
@@ -298,7 +298,7 @@ public:
 
   /**
    * Construct a new INDRA instance.
-   * @param socket Socket instance to use for communication with the lidar
+   * @param socket Socket instance to use for communication with the controller
    */
   INDRA(shared_ptr<Socket> socket, shared_ptr<Socket> io_socket)
     : Session(socket, io_socket), connection_num_(-1), mrc_sequence_num_(1),
@@ -307,66 +307,219 @@ public:
     first_control_command_(true)
   {}
 
+  /**
+   * Prints any changes to the status word since the last call to sync().
+   */
   void print_status_word_changes();
 
+  /**
+   * Prints any changes in the control word since the last call to sync().
+   */
   void print_control_word_changes();
 
+  /**
+   * Prints the entire status_word to std_out.
+   */
   void print_status_word();
 
+  /**
+   * Prints the entire control word to std_out.
+   */
   void print_control_word();
 
+  /**
+   * Prints the description and state of the desired status word field to std_out.
+   * @param index Index of the control field to print (0-13).
+   */
   void print_status_field(uint8_t index);
 
+  /**
+   * Prints the description and state of the desired control word field to std_out.
+   * @param index Index of the control field to print (0-12).
+   */
   void print_control_field(uint8_t index);
 
-  void sendMeasurmentReportConfigUDP();
-
+  /**
+   * Used to set a field in the control word.
+   * @param field One of the available fields in the CONTROL_FIELD enum.
+   * @param value The desired value for that field
+   * @param respect_lock Whether to lock/restrict subsequent commands from being
+   *                     sent to the controller until the controller
+   *                     acknowledges this command.
+   * @return True once the field has been set
+   */
   uint8_t set_control_field(CONTROL_FIELD field, uint16_t value, bool respect_lock);
 
+  /**
+   * Puts the device into operating mode once the device is ready to enter that
+   * state.
+   * @return True when the controller is in parameter mode.
+   */
   uint8_t enter_operating_mode();
 
+  /**
+   * Puts the device into parameter mode.
+   * @return True when the controller is in parameter mode.
+   */
   uint8_t enter_parameter_mode();
 
+  /**
+   * Sends the control word to the controller.
+   */
+  void sendMeasurmentReportConfigUDP();
+
+  /**
+   * Receives data from the controller. When configured according to the README
+   * this contains the current velocity and position as well as the status word.
+   * TODO: Rename this to be report as opposed to measurement report.
+   * @return The controllers report as per its protocol configuration.
+   */
   MeasurementReport receiveMeasurementReportUDP();
 
+  /**
+   * Sets the control word and receives data from the target. Received data
+   * contains the current velocity and position. When the controller is
+   * configured according to the README.
+   */
   void sync();
 
+  /**
+   * Toggles the IPOSYNC flag in the control register to cause a configuration
+   * change in the control word to be accepted by the controller.
+   */
   void toggle_command_bits();
 
+  /**
+   * Sets up the connection with the controller. This function contains the
+   * assembly_id, buffer_size, and request packet interval. TODO: allow passing
+   * these variables into this method as parameters.
+   */
   void establishConnection();
 
+  /**
+   * Checks to see that the current state of the controller is operating mode.
+   * @return True if the controller is in operating mode.
+   */
   uint8_t in_operating_mode();
 
+  /**
+   * Checks to see that the current state of the controller is parameter mode.
+   * @return True if the controller is in parameter mode.
+   */
   uint8_t in_parameter_mode();
 
+  /**
+   * Clears the 'absolute/relative' flag in the control register.
+   * This means the controller will interpret position commands relative to
+   * an origin that has been configured on the controller or by homing.
+   * @return Always returns true
+   */
   uint8_t set_absolute_positioning();
 
+  /**
+   * Sets the 'absolute/relative' flag in the control register.
+   * This means the controller will interpret position commands relative to
+   * its current position.
+   * @return Always returns true
+   */
   uint8_t set_relative_positioning();
 
+  /**
+   * Checks the operating mode to see if the controller is ready for a new
+   * position/velocity command. This may not correspond to the end of the
+   * previous command being completed if the 'immediate block change' flag
+   * has been set.
+   * @return Returns true when the controller is ready for the next command
+   */
   uint8_t ready_for_command();
 
+  /**
+   * Clears the 'drive ON' flag in the control register. When this occurs the
+   * drive will decelerate according to the setting at P-0-0119.
+   * @return Returns true when the drive has been turned off.
+   */
   uint8_t drive_off();
 
+  /**
+   * Sets the 'drive ON' flag in the control register once the controller is in
+   * a state to be turned on.
+   * @return Returns true once the controller is on.
+   */
   uint8_t drive_on();
 
+  /**
+   * Sets the 'goint to zero' flag in the control register. When this occurs
+   * the drive will start its coming sequence.
+   * TODO: Shouldn't return 1 until the drive has been homed.
+   * @return Returns true when the flag has been set
+   */
   uint8_t home_drive();
 
+  /**
+   * Clears the 'Drive Halt' flag in the control register. When this occurs
+   * the control commands can be executed by the controller
+   * @return Returns True when the flag has been cleared..
+   */
   uint8_t halt_on();
 
+  /**
+   * Sets the 'Drive Halt' flag in the control register. When this occurs
+   * the drive is immediately shut down (speed command value set to zero!)
+   * @return Returns True when the flag is set.
+   */
   uint8_t halt_off();
 
+  /**
+   * Checks the previous status word for the presence of an error flag present
+   * in the 'class 1 diagnostic drive error' field.
+   * @return Whether the controller has an error.
+   */
   uint8_t has_error();
 
+  /**
+   * Sets the control word bit to signal an error clear. Wont return true until
+   * the error has been cleared. Also returns the bit to 0 once the error has
+   * been cleared. This function is meant to be called in a loop.
+   * @return True when no errors are present, False while clearing.
+   */
   uint8_t clear_error();
 
+  /**
+   * Send a position command to the controller.
+   * @param position The desired motor position .
+   * @param velocity The target velocity used to reach that position.
+   * @return Currently returns nothing TODO: turn this into a void method.
+   */
   uint8_t goto_position(int32_t position, int32_t velocity);
 
+  /**
+   * Sets the internally stored status and control words to match the current
+   * state of the controller. This may mean setting the operating mode to match
+   * the current state of the controller. This is only run once at startup.
+   */
   void align_words();
 
+  /**
+   * Toggles 'command value acceptance' bit in the field-bus control word.
+   * This signals to the controller that it should process any changes in the
+   * control word.
+   */
   void toggleCommandBit();
 
+  /**
+   * Returns whether the controller has acknowledged the previous configuration
+   * command. This may be a change in the control word.
+   *
+   * @return Previous configuration change acknowledged
+   */
   bool previous_config_change_acknowledged();
 
+  /**
+   * Returns whether the controller has acknowledged the previous control
+   * command. This refers to a new command position or velocity.
+   *
+   * @return Previous command acknowledged
+   */
   bool pervious_control_command_acknowledged();
 
 
@@ -376,11 +529,16 @@ private:
   int connection_num_;
   MeasurementReportConfig mrc_;
   EIP_UDINT mrc_sequence_num_;
-  // internal persistant control word
+
+  // internal persistant control words
   uint16_t lst_status_word_; // most recent status word
   uint16_t prv_status_word_; // two words ago
+
+  // Flags to control the flow of setting configuration commands.
   bool ready_for_cfg_cmd_;
   bool ready_for_ctrl_cmd_;
+
+  // Used to allow sending a command when no previous command has been ack'd.
   bool first_control_command_;
 };
 
